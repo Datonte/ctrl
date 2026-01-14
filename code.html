@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html class="scroll-smooth" lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+  <title>$CTRL | Take Control of Your Destiny</title>
+  <link rel="icon" type="image/jpeg" href="space_bg.jpeg">
+  <link href="https://fonts.googleapis.com" rel="preconnect" />
+  <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&amp;family=Orbitron:wght@400;700;900&amp;display=swap"
+    rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0"
+    rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            primary: "#22c55e", // Bright Green
+            secondary: "#f59e0b", // Gold
+            "background-light": "#f8fafc",
+            "background-dark": "#020617",
+          },
+          fontFamily: {
+            display: ["Orbitron", "sans-serif"],
+            body: ["Space Grotesk", "sans-serif"],
+          },
+          borderRadius: {
+            DEFAULT: "0.75rem",
+          },
+          animation: {
+            'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            'float': 'float 6s ease-in-out infinite',
+            'zoom': 'zoom 20s alternate infinite',
+          },
+          keyframes: {
+            float: {
+              '0%, 100%': { transform: 'translateY(0px)' },
+              '50%': { transform: 'translateY(-20px)' },
+            },
+            zoom: {
+              '0%': { transform: 'scale(1)' },
+              '100%': { transform: 'scale(1.5)' },
+            }
+          }
+        },
+      },
+    };
+  </script>
+  <style>
+    .glass {
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .hero-bg {
+      background: radial-gradient(circle at center, rgba(34, 197, 94, 0.15) 0%, transparent 70%);
+    }
+
+    .text-glow {
+      text-shadow: 0 0 15px rgba(34, 197, 94, 0.5);
+    }
+
+    .ctrl-key {
+      box-shadow: 0 20px 0 #000, 0 25px 50px -12px rgba(34, 197, 94, 0.5);
+      transition: all 0.1s ease;
+    }
+
+    .ctrl-key:active,
+    .ctrl-key.pressed {
+      transform: translateY(10px);
+      box-shadow: 0 10px 0 #000, 0 15px 30px -12px rgba(34, 197, 94, 0.8);
+    }
+
+    .warp-lines {
+      background-image: repeating-conic-gradient(from 0deg, transparent 0deg 10deg, rgba(255, 255, 255, 0.03) 10deg 20deg);
+      mask-image: radial-gradient(circle, black, transparent 80%);
+    }
+
+    @keyframes floatMessage {
+      0% {
+        transform: translate(-50%, 20px) scale(0.8);
+        opacity: 0;
+      }
+
+      20% {
+        transform: translate(-50%, 0) scale(1.1);
+        opacity: 1;
+      }
+
+      80% {
+        opacity: 1;
+      }
+
+      100% {
+        transform: translate(-50%, -100px) scale(1);
+        opacity: 0;
+      }
+    }
+
+    .message-popup {
+      position: fixed;
+      pointer-events: none;
+      color: #22c55e;
+      /* primary */
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 900;
+      text-align: center;
+      text-shadow: 0 4px 20px rgba(0, 0, 0, 1);
+      z-index: 40;
+      animation: floatMessage 2s ease-out forwards;
+      width: auto;
+      white-space: nowrap;
+    }
+  </style>
+</head>
+
+<body
+  class="bg-background-light dark:bg-background-dark font-body text-slate-900 dark:text-slate-100 overflow-x-hidden">
+  <div class="fixed inset-0 -z-10 overflow-hidden bg-black">
+    <canvas id="space-canvas" class="absolute inset-0 w-full h-full opacity-60"></canvas>
+    <div class="absolute inset-0 hero-bg"></div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('space-canvas');
+    const ctx = canvas.getContext('2d');
+
+    let width, height;
+    let stars = [];
+    const numStars = 400;
+    const speed = 25; // Speed of zoom
+
+    function resize() {
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas.width = width;
+      canvas.height = height;
+    }
+
+    function initStars() {
+      stars = [];
+      for (let i = 0; i < numStars; i++) {
+        stars.push({
+          x: Math.random() * width - width / 2,
+          y: Math.random() * height - height / 2,
+          z: Math.random() * width
+        });
+      }
+    }
+
+    function draw() {
+      // Clear with a slight fade for trails (optional, but pure black is cleaner for this style)
+      ctx.fillStyle = "black";
+      ctx.fillRect(0, 0, width, height);
+
+      ctx.fillStyle = "#22c55e";
+
+      for (let i = 0; i < numStars; i++) {
+        let star = stars[i];
+
+        // Move star closer
+        star.z -= speed;
+
+        // Reset star if it passes the screen
+        if (star.z <= 0) {
+          star.z = width;
+          star.x = Math.random() * width - width / 2;
+          star.y = Math.random() * height - height / 2;
+        }
+
+        // Project 3D coordinates to 2D
+        let k = 128.0 / star.z;
+        let px = star.x * k + width / 2;
+        let py = star.y * k + height / 2;
+
+        // Calculate size based on distance
+        let size = (1 - star.z / width) * 3;
+
+        if (px >= 0 && px <= width && py >= 0 && py <= height) {
+          // Draw star
+          ctx.beginPath();
+          ctx.arc(px, py, size, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Optional: Draw trail
+          if (size > 1.5) {
+            ctx.strokeStyle = `rgba(34, 197, 94, ${0.3 * size})`;
+            ctx.lineWidth = size;
+            ctx.beginPath();
+            ctx.moveTo(px, py);
+            // Trail goes opposite to movement
+            // Simple radial trail from center
+            let tx = (px - width / 2) * 1.05 + width / 2;
+            let ty = (py - height / 2) * 1.05 + height / 2;
+            ctx.lineTo(tx, ty);
+            ctx.stroke();
+          }
+        }
+      }
+      requestAnimationFrame(draw);
+    }
+
+    window.addEventListener('resize', () => {
+      resize();
+      initStars();
+    });
+
+    resize();
+    initStars();
+    draw();
+  </script>
+  <nav class="fixed top-0 left-0 right-0 z-50 px-6 py-4">
+    <div class="max-w-7xl mx-auto flex justify-between items-center glass rounded-2xl px-6 py-3 border border-white/10">
+      <div class="flex items-center gap-2 group cursor-pointer">
+        <img src="space_bg.jpeg"
+          class="w-12 h-12 rounded-lg object-cover border-2 border-primary shadow-lg shadow-primary/20" alt="CTRL Logo">
+        <span class="font-display text-xl font-bold tracking-tighter text-white">CTRL</span>
+      </div>
+      <a class="hover:text-primary transition-colors text-white/80" href="#about">About</a>
+      <div class="flex items-center gap-4">
+        <a class="text-white hover:text-primary transition-colors" href="#">
+          <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24">
+            <path
+              d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z">
+            </path>
+          </svg>
+        </a>
+        <img src="dex.png" class="w-6 h-6 rounded-full object-cover bg-white" alt="Dexscreener">
+
+      </div>
+    </div>
+  </nav>
+  <main class="relative pt-32 pb-20 px-6 min-h-screen flex flex-col items-center justify-center text-center">
+    <div class="max-w-4xl mx-auto">
+      <h2 class="font-display text-primary text-xl font-bold mb-4 tracking-[0.2em] uppercase text-glow">Master the
+        shortcut</h2>
+      <h1 class="font-display text-5xl md:text-8xl font-black mb-12 text-white leading-tight">
+        TAKE <span class="text-primary italic">CONTROL</span>
+      </h1>
+      <div class="relative group cursor-pointer inline-block mb-16">
+        <div class="absolute inset-0 bg-primary/20 blur-3xl animate-pulse-slow rounded-full"></div>
+        <div
+          class="ctrl-key relative bg-white rounded-[2rem] p-10 md:p-16 flex flex-col items-center justify-center min-w-[280px] select-none">
+          <span class="font-display text-6xl md:text-8xl font-black text-black tracking-tighter uppercase">Ctrl</span>
+          <div class="absolute bottom-4 right-8 opacity-20">
+            <span class="material-symbols-rounded text-black text-3xl">keyboard_command_key</span>
+          </div>
+        </div>
+      </div>
+      <div class="max-w-xl mx-auto mb-16">
+        <p class="text-white/60 mb-3 text-sm font-medium tracking-widest uppercase">Official Contract Address</p>
+        <div class="glass p-1 rounded-2xl flex items-center group">
+          <code class="flex-1 px-6 font-mono text-primary text-lg truncate py-3">0x8888...777CTRL</code>
+          <button
+            class="bg-primary hover:bg-green-400 text-black p-3 rounded-xl m-1 transition-colors flex items-center gap-2 font-bold"
+            onclick="navigator.clipboard.writeText('0x8888...777CTRL')">
+            <span class="material-symbols-rounded">content_copy</span>
+            <span class="hidden md:inline">COPY</span>
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="max-w-3xl mx-auto">
+      <div id="about" class="glass p-8 md:p-12 rounded-[2.5rem] relative overflow-hidden scroll-mt-32">
+        <div class="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-2xl -mr-16 -mt-16"></div>
+        <p class="text-2xl md:text-3xl font-medium leading-relaxed text-white">
+          <span class="text-primary font-display font-bold">$CTRL</span> is the shortcut coin basically.
+          On a keyboard, <span class="text-white font-bold">CTRL</span> unlocks every shortcut.
+          In life, control unlocks success.
+          <span class="block mt-6 text-xl text-white/80">
+            Time, money, focus, discipline. Every successful person at a point had to take <span
+              class="text-primary">$CTRL</span> to win.
+            <span class="italic text-white/60 block mt-2">This is for anyone ready to take control and level up.</span>
+          </span>
+        </p>
+      </div>
+    </div>
+  </main>
+  <section class="py-24 px-6 relative">
+    <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div class="glass p-8 rounded-3xl group hover:border-primary/50 transition-all duration-300">
+        <div
+          class="w-14 h-14 bg-primary/20 rounded-2xl flex items-center justify-center mb-6 text-primary group-hover:scale-110 transition-transform">
+          <span class="material-symbols-rounded text-3xl">keyboard</span>
+        </div>
+        <h3 class="font-display text-2xl font-bold mb-4 text-white">The Shortcut</h3>
+        <p class="text-white/60 leading-relaxed">$CTRL is the ultimate shortcut. Skip the noise, unlock the path, and
+          get straight to the destination.</p>
+      </div>
+      <div class="glass p-8 rounded-3xl group hover:border-secondary/50 transition-all duration-300">
+        <div
+          class="w-14 h-14 bg-secondary/20 rounded-2xl flex items-center justify-center mb-6 text-secondary group-hover:scale-110 transition-transform">
+          <span class="material-symbols-rounded text-3xl">lock</span>
+        </div>
+        <h3 class="font-display text-2xl font-bold mb-4 text-white">Focus & Discipline</h3>
+        <p class="text-white/60 leading-relaxed">Control unlocks success. We embody the discipline required to win in a
+          chaotic market.</p>
+      </div>
+      <div class="glass p-8 rounded-3xl group hover:border-primary/50 transition-all duration-300">
+        <div
+          class="w-14 h-14 bg-primary/20 rounded-2xl flex items-center justify-center mb-6 text-primary group-hover:scale-110 transition-transform">
+          <span class="material-symbols-rounded text-3xl">upgrade</span>
+        </div>
+        <h3 class="font-display text-2xl font-bold mb-4 text-white">Level Up</h3>
+        <p class="text-white/60 leading-relaxed">This is for the winners. Take $CTRL, elevate your status, and master
+          your destiny.</p>
+      </div>
+    </div>
+  </section>
+  <footer class="py-12 border-t border-white/5 bg-black/40 backdrop-blur-md">
+    <div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-8">
+      <div class="flex items-center gap-2">
+        <img src="space_bg.jpeg" class="w-8 h-8 rounded-md object-cover border border-primary/50" alt="CTRL Logo">
+        <span class="font-display font-bold text-white">$CTRL MEMECOIN</span>
+      </div>
+      <p class="text-white/40 text-sm">© 2024 CTRL. Built for those who master the shortcuts. Financial advice? No.
+        Memes? Yes.</p>
+      <div class="flex gap-6">
+        <a class="text-white/60 hover:text-white transition-colors" href="#">X (Twitter)</a>
+        <a class="text-white/60 hover:text-white transition-colors" href="#">Dexscreener</a>
+      </div>
+    </div>
+  </footer>
+  <script>
+    // Interaction for the CTRL key
+    const ctrlKey = document.querySelector('.ctrl-key');
+
+    const messages = [
+      "Congratulations! You took control of your life!",
+      "You just won the lottery of destiny!",
+      "Profit: +$1,000 made!",
+      "Level Up: SUCCESS",
+      "Shortcut UNLOCKED",
+      "Discipline is Freedom",
+      "You are the Captain now",
+      "Winner Mindset Activated",
+      "Destiny: MANIFESTED",
+      "Bank Account: GROWING",
+      "Matrix: ESCAPED",
+      "Focus: UNBREAKABLE",
+      "Status: LEGENDARY",
+      "Competitors: DELETED",
+      "Vision: CLARITY 100%",
+      "Power: UNLIMITED",
+      "Signal: RECEIVED",
+      "Alpha: ACQUIRED",
+      "WAGMI",
+      "FOMO: ZERO"
+    ];
+
+    function spawnMessage() {
+      const msg = messages[Math.floor(Math.random() * messages.length)];
+      const el = document.createElement('div');
+      el.className = 'message-popup text-xl md:text-3xl';
+      el.innerText = msg;
+
+      // Random position (avoiding edges somewhat)
+      const x = Math.random() * 60 + 20; // 20-80%
+      const y = Math.random() * 60 + 20; // 20-80%
+
+      el.style.left = x + '%';
+      el.style.top = y + '%';
+
+      // Random subtle rotation
+      const rot = Math.random() * 20 - 10;
+      el.style.transform = `translate(-50%, 0) rotate(${rot}deg)`;
+
+      document.body.appendChild(el);
+
+      setTimeout(() => el.remove(), 2000);
+    }
+
+    function activateCtrl() {
+      console.log('Command executed: Control taken.');
+      spawnMessage();
+    }
+
+    ctrlKey.addEventListener('click', activateCtrl);
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Control') {
+        ctrlKey.classList.add('pressed');
+        if (!e.repeat) {
+          activateCtrl();
+        }
+      }
+    });
+
+    document.addEventListener('keyup', (e) => {
+      if (e.key === 'Control') {
+        ctrlKey.classList.remove('pressed');
+      }
+    });
+  </script>
+
+</body>
+
+</html>
